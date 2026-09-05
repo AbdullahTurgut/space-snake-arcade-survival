@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MarkerParts : MonoBehaviour
 {
-    public class Marker
+    public struct Marker
     {
         public Vector3 pos;
         public Quaternion rot;
@@ -14,11 +14,9 @@ public class MarkerParts : MonoBehaviour
             this.pos = pos;
             this.rot = rot;
         }
-
-
     }
 
-    public List<Marker> markerList = new List<Marker>();
+    public List<Marker> markerList = new List<Marker>(64);
 
     private void FixedUpdate()
     {

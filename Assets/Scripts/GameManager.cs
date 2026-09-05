@@ -58,12 +58,28 @@ public class GameManager : MonoBehaviour
         bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + " Sec";
     }
 
+    private int lastDisplayedSec = -1;
+    private int lastDisplayedBallCount = -1;
+
     // Update is called once per frame
     void Update()
     {
         survivaTime += Time.deltaTime;
-        timeText.text = "Survive Time : " + survivaTime.ToString("00") + " Sec";
-        energyBallCountText.text = "Energy Ball : " + ballCount.ToString();
+
+        int currentSec = (int)survivaTime;
+        if (currentSec != lastDisplayedSec)
+        {
+            lastDisplayedSec = currentSec;
+            if (timeText != null)
+                timeText.text = "Survive Time : " + currentSec.ToString("00") + " Sec";
+        }
+
+        if (ballCount != lastDisplayedBallCount)
+        {
+            lastDisplayedBallCount = ballCount;
+            if (energyBallCountText != null)
+                energyBallCountText.text = "Energy Ball : " + ballCount;
+        }
 
         float spawnInterval = 3f;
         if (ballCount >= 20)

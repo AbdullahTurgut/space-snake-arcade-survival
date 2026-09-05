@@ -16,6 +16,8 @@ public class SnakeManager : MonoBehaviour
     private float currentSpeed;
     private Rigidbody2D headRb;
 
+    private List<MarkerParts> bodyMarkerParts = new List<MarkerParts>();
+
     private void Awake()
     {
         instance = this;
@@ -75,8 +77,8 @@ public class SnakeManager : MonoBehaviour
         {
             for (int i = 1; i < snakeBody.Count; i++)
             {
-                if (snakeBody[i] == null || snakeBody[i - 1] == null) continue;
-                MarkerParts markP = snakeBody[i - 1].GetComponent<MarkerParts>();
+                if (snakeBody[i] == null || i - 1 >= bodyMarkerParts.Count) continue;
+                MarkerParts markP = bodyMarkerParts[i - 1];
                 if (markP != null && markP.markerList != null && markP.markerList.Count > 0)
                 {
                     snakeBody[i].transform.position = markP.markerList[0].pos;
@@ -101,6 +103,10 @@ public class SnakeManager : MonoBehaviour
             if (snakeBody[i] == null)
             {
                 snakeBody.RemoveAt(i);
+                if (i < bodyMarkerParts.Count)
+                {
+                    bodyMarkerParts.RemoveAt(i);
+                }
                 i--;
             }
         }
@@ -119,14 +125,16 @@ public class SnakeManager : MonoBehaviour
         if (snakeBody.Count == 0)
         {
             GameObject snakeHead = Instantiate(bodyParts[0], transform.position, transform.rotation, transform);
-            if (!snakeHead.GetComponent<MarkerParts>())
-                snakeHead.AddComponent<MarkerParts>();
+            MarkerParts headMarker = snakeHead.GetComponent<MarkerParts>();
+            if (!headMarker)
+                headMarker = snakeHead.AddComponent<MarkerParts>();
             if (!snakeHead.GetComponent<Rigidbody2D>())
             {
                 Rigidbody2D rb = snakeHead.AddComponent<Rigidbody2D>();
                 rb.bodyType = RigidbodyType2D.Kinematic;
             }
             snakeBody.Add(snakeHead);
+            bodyMarkerParts.Add(headMarker);
             headRb = snakeHead.GetComponent<Rigidbody2D>();
             bodyParts.RemoveAt(0);
             return;
@@ -148,16 +156,18 @@ public class SnakeManager : MonoBehaviour
             Quaternion spawnRot = (markP.markerList != null && markP.markerList.Count > 0) ? markP.markerList[0].rot : markP.transform.rotation;
 
             GameObject temp = Instantiate(bodyParts[0], spawnPos, spawnRot, transform);
-            if (!temp.GetComponent<MarkerParts>())
-                temp.AddComponent<MarkerParts>();
+            MarkerParts tempMarker = temp.GetComponent<MarkerParts>();
+            if (!tempMarker)
+                tempMarker = temp.AddComponent<MarkerParts>();
             if (!temp.GetComponent<Rigidbody2D>())
             {
                 Rigidbody2D rb = temp.AddComponent<Rigidbody2D>();
                 rb.bodyType = RigidbodyType2D.Kinematic;
             }
             snakeBody.Add(temp);
+            bodyMarkerParts.Add(tempMarker);
             bodyParts.RemoveAt(0);
-            temp.GetComponent<MarkerParts>().ClearMarkerList();
+            tempMarker.ClearMarkerList();
             count = 0;
         }
     }
