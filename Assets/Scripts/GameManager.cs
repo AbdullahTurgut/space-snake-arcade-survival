@@ -41,6 +41,13 @@ public class GameManager : MonoBehaviour
 
     
 
+    [HideInInspector] public int currentScore = 0;
+    [HideInInspector] public int highScore = 0;
+    private int nearMissCount = 0;
+
+    private int lastDisplayedSec = -1;
+    private int lastDisplayedBallCount = -1;
+
     // Start is called before the first frame update
     private void Awake()
     {
@@ -50,16 +57,33 @@ public class GameManager : MonoBehaviour
             bestSurviveTime = PlayerPrefs.GetFloat("bestSurviveTime");
         else
             PlayerPrefs.SetFloat("bestSurviveTime", bestSurviveTime);
+
+        highScore = PlayerPrefs.GetInt("highScore", 0);
     }
     void Start()
     {
         if (ballCount != 0)
             ballCount = 0;
-        bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + " Sec";
+        bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | High: " + highScore;
     }
 
-    private int lastDisplayedSec = -1;
-    private int lastDisplayedBallCount = -1;
+    public void AddScore(int points)
+    {
+        currentScore += points;
+        int currentSec = (int)survivaTime;
+        if (timeText != null)
+            timeText.text = "Time: " + currentSec.ToString("00") + "s | Score: " + currentScore;
+    }
+
+    public void AddNearMiss()
+    {
+        nearMissCount++;
+        AddScore(50);
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayPickSound(1.3f, 1.4f);
+        }
+    }
 
     // Update is called once per frame
     void Update()
@@ -69,9 +93,10 @@ public class GameManager : MonoBehaviour
         int currentSec = (int)survivaTime;
         if (currentSec != lastDisplayedSec)
         {
+            if (lastDisplayedSec != -1) AddScore(10);
             lastDisplayedSec = currentSec;
             if (timeText != null)
-                timeText.text = "Survive Time : " + currentSec.ToString("00") + " Sec";
+                timeText.text = "Time: " + currentSec.ToString("00") + "s | Score: " + currentScore;
         }
 
         if (ballCount != lastDisplayedBallCount)
@@ -119,6 +144,12 @@ public class GameManager : MonoBehaviour
                 bestSurviveTime = survivaTime;
                 PlayerPrefs.SetFloat("bestSurviveTime", bestSurviveTime);
             }
+            if (currentScore > highScore)
+            {
+                highScore = currentScore;
+                PlayerPrefs.SetInt("highScore", highScore);
+            }
+            PlayerPrefs.Save();
             joystickPanel.SetActive(false);
             playSceneFbx.Stop();
             EndingGame();
@@ -153,8 +184,8 @@ public class GameManager : MonoBehaviour
         endingPanel.SetActive(true);
         endingPanel.GetComponent<AudioSource>().Play();
         Time.timeScale = 0;
-        newSurviveTimeText.text = "NEW SURVIVE TIME : " + survivaTime.ToString("00") + " Sec";
-        BestSurviveTimeText.text = "BEST SURVIVE TIME : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + " Sec";
+        newSurviveTimeText.text = "SURVIVED: " + survivaTime.ToString("00") + "s | SCORE: " + currentScore;
+        BestSurviveTimeText.text = "BEST: " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | HIGH: " + highScore;
     }
 
 
@@ -164,7 +195,12 @@ public class GameManager : MonoBehaviour
         if (astreoidPrefab != null && astreoidPrefab.Count > 0)
         {
             int prefabIndex = Random.Range(0, astreoidPrefab.Count);
-            Instantiate(astreoidPrefab[prefabIndex], randomPosAstreoid, Quaternion.identity);
+            GameObject astroid = Instantiate(astreoidPrefab[prefabIndex], randomPosAstreoid, Quaternion.identity);
+            DestroyAsteroid script = astroid.GetComponent<DestroyAsteroid>();
+            if (script != null && Random.value < 0.25f)
+            {
+                script.SetAsComet();
+            }
         }
     }
 

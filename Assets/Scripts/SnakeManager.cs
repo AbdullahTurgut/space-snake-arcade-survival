@@ -18,6 +18,10 @@ public class SnakeManager : MonoBehaviour
 
     private List<MarkerParts> bodyMarkerParts = new List<MarkerParts>();
 
+    public bool IsInvulnerable { get; private set; }
+    private bool isBoosting = false;
+    private float boostTimer = 0f;
+
     private void Awake()
     {
         instance = this;
@@ -28,6 +32,58 @@ public class SnakeManager : MonoBehaviour
     {
         Time.timeScale = 1;
         CreateBodyPart();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            TryActivateBoost();
+        }
+
+        if (isBoosting)
+        {
+            boostTimer -= Time.deltaTime;
+            if (boostTimer <= 0f)
+            {
+                isBoosting = false;
+                IsInvulnerable = false;
+            }
+        }
+    }
+
+    public bool TryActivateBoost()
+    {
+        // Sacrificing tail segment requires > 2 parts (head + at least 2 segments)
+        if (snakeBody.Count > 2 && !isBoosting)
+        {
+            int tailIdx = snakeBody.Count - 1;
+            GameObject tailPart = snakeBody[tailIdx];
+            snakeBody.RemoveAt(tailIdx);
+            if (tailIdx < bodyMarkerParts.Count)
+            {
+                bodyMarkerParts.RemoveAt(tailIdx);
+            }
+            if (tailPart != null)
+            {
+                Destroy(tailPart);
+            }
+
+            isBoosting = true;
+            IsInvulnerable = true;
+            boostTimer = 1.2f;
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayPickSound(1.4f, 1.5f);
+            }
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.12f, 0.15f);
+            }
+            return true;
+        }
+        return false;
     }
 
     private void FixedUpdate()
@@ -52,9 +108,10 @@ public class SnakeManager : MonoBehaviour
             headRb = snakeBody[0].GetComponent<Rigidbody2D>();
         }
 
+        float effectiveSpeed = isBoosting ? currentSpeed * 1.75f : currentSpeed;
         if (headRb != null)
         {
-            headRb.linearVelocity = snakeBody[0].transform.right * currentSpeed;
+            headRb.linearVelocity = snakeBody[0].transform.right * effectiveSpeed;
         }
 
         // Steer with Joystick or Keyboard (A/D / Left/Right)
