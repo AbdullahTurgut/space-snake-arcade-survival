@@ -48,6 +48,27 @@ public class SnakeManager : MonoBehaviour
             {
                 isBoosting = false;
                 IsInvulnerable = false;
+                SetSnakeColor(Color.white);
+            }
+            else if (boostTimer < 0.35f)
+            {
+                float pulse = Mathf.PingPong(Time.time * 12f, 1f);
+                SetSnakeColor(Color.Lerp(Color.white, new Color(0.3f, 1f, 1f), pulse));
+            }
+        }
+    }
+
+    private void SetSnakeColor(Color color)
+    {
+        for (int i = 0; i < snakeBody.Count; i++)
+        {
+            if (snakeBody[i] != null)
+            {
+                SpriteRenderer sr = snakeBody[i].GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.color = color;
+                }
             }
         }
     }
@@ -72,6 +93,7 @@ public class SnakeManager : MonoBehaviour
             isBoosting = true;
             IsInvulnerable = true;
             boostTimer = 1.2f;
+            SetSnakeColor(new Color(0.3f, 1f, 1f));
 
             if (SoundManager.Instance != null)
             {

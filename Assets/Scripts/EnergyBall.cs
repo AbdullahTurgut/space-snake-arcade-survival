@@ -44,6 +44,7 @@ public class EnergyBall : MonoBehaviour
             {
                 GameManager.Instance.ballCount += 1;
                 GameManager.Instance.survivaTime += 1;
+                GameManager.Instance.AddScore(100);
             }
             RandomPositionOfEnergyBall();
             if (SnakeManager.instance != null && bodyPartObj != null)
