@@ -15,10 +15,11 @@ public class EnergyBall : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        transform.Rotate(new Vector3(0, 0, 1), 180f * Time.deltaTime);
+        transform.Rotate(new Vector3(0, 0, 1), 180f * Time.fixedDeltaTime);
     }
     private void RandomPositionOfEnergyBall()
     {
+        if (gridArea == null) return;
         Bounds bounds = this.gridArea.bounds;
 
         float x = Random.Range(bounds.min.x, bounds.max.x);
@@ -29,13 +30,19 @@ public class EnergyBall : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D col)
     {
-        if(col.tag == "Player")
+        if (col.CompareTag("Player"))
         {
-            pickSound.Play();
-            GameManager.Instance.ballCount += 1;
-            GameManager.Instance.survivaTime += 1;
+            if (pickSound != null) pickSound.Play();
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ballCount += 1;
+                GameManager.Instance.survivaTime += 1;
+            }
             RandomPositionOfEnergyBall();
-            SnakeManager.instance.AddBodyPart(bodyPartObj);
+            if (SnakeManager.instance != null && bodyPartObj != null)
+            {
+                SnakeManager.instance.AddBodyPart(bodyPartObj);
+            }
         }
     }
 }

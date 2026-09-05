@@ -14,13 +14,16 @@ public class MovementJoystick : MonoBehaviour
 
     public static MovementJoystick instance;
 
+    private void Awake()
+    {
+        instance = this;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        instance = this;
         joystickOriginalPosition = joystickBG.transform.position;
         joystickRadius = joystickBG.GetComponent<RectTransform>().sizeDelta.y / 3.5f;
-
     }
     public void PointerDown()
     {

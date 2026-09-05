@@ -8,20 +8,14 @@ public class SnakeHeadScript : MonoBehaviour
     public static SnakeHeadScript Instance { get { return instance; } }
 
     public bool endingBool = false;
-    void Start()
+    private void Awake()
     {
         instance = this;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     private void OnTriggerEnter2D(Collider2D col)
     {
-        if(col.gameObject.tag == "Wall")
+        if (col.CompareTag("Wall"))
         {
             endingBool = true;
         }

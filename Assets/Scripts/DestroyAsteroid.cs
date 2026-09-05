@@ -10,34 +10,59 @@ public class DestroyAsteroid : MonoBehaviour
    
     private void Start()
     {
-        randPos = GameManager.Instance.AstreoidFallingtransforms[Random.Range(0, 3)];
-        //Destroy(this.gameObject,4f);
+        if (GameManager.Instance != null && GameManager.Instance.AstreoidFallingtransforms != null && GameManager.Instance.AstreoidFallingtransforms.Count > 0)
+        {
+            int index = Random.Range(0, GameManager.Instance.AstreoidFallingtransforms.Count);
+            randPos = GameManager.Instance.AstreoidFallingtransforms[index];
+        }
+        Destroy(gameObject, 10f);
     }
 
     private void Update()
     {
+        if (randPos == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         transform.position = Vector2.MoveTowards(
             transform.position,
             randPos.position,
             asteriodFallingSpeed * Time.deltaTime);
 
-        transform.up = randPos.position - transform.position;
+        Vector3 direction = randPos.position - transform.position;
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            transform.up = direction;
+        }
 
-        if (transform.position == randPos.position)
-            Destroy(this.gameObject);
+        if (Vector2.Distance(transform.position, randPos.position) <= 0.15f || transform.position.y < -12f)
+        {
+            Destroy(gameObject);
+        }
     }
-
-    
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.gameObject.tag == "BodyPart")
+        if (collision.CompareTag("BodyPart"))
         {
-            
-            Destroy(this.gameObject);
+            Destroy(gameObject);
             Destroy(collision.gameObject);
-            GameManager.Instance.survivaTime -= 3f;
-            GameManager.Instance.astreoidSpawnTime -= 3f;
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.survivaTime = Mathf.Max(0f, GameManager.Instance.survivaTime - 3f);
+                GameManager.Instance.astreoidSpawnTime = Mathf.Max(0f, GameManager.Instance.astreoidSpawnTime - 3f);
+            }
+        }
+        else if (collision.CompareTag("Player"))
+        {
+            // Head collision with asteroid triggers Game Over
+            Destroy(gameObject);
+            if (SnakeHeadScript.Instance != null)
+            {
+                SnakeHeadScript.Instance.endingBool = true;
+            }
         }
     }
 }

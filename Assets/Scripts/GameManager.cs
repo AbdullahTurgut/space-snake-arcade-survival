@@ -44,6 +44,7 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     private void Awake()
     {
+        instance = this;
         Time.timeScale = 1f;
         if(PlayerPrefs.HasKey("bestSurviveTime"))
             bestSurviveTime = PlayerPrefs.GetFloat("bestSurviveTime");
@@ -52,7 +53,6 @@ public class GameManager : MonoBehaviour
     }
     void Start()
     {
-        instance = this;
         if (ballCount != 0)
             ballCount = 0;
         bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + " Sec";
@@ -65,23 +65,21 @@ public class GameManager : MonoBehaviour
         timeText.text = "Survive Time : " + survivaTime.ToString("00") + " Sec";
         energyBallCountText.text = "Energy Ball : " + ballCount.ToString();
 
-        if (survivaTime > (astreoidSpawnTime + 3f) && ballCount >= 0)
+        float spawnInterval = 3f;
+        if (ballCount >= 20)
         {
-            AstreoidSpawn();
-            astreoidSpawnTime += 3f;
-            asteriodRespawnText.text = "Asteroid Respawn In 3 Sec";
+            spawnInterval = 1.5f;
         }
-        else if(survivaTime > (astreoidSpawnTime + 2f) && ballCount >= 10)
+        else if (ballCount >= 10)
         {
-            AstreoidSpawn();
-            astreoidSpawnTime += 2f;
-            asteriodRespawnText.text = "Asteroid Respawn In 2 Sec";
+            spawnInterval = 2f;
         }
-        else if(survivaTime > (astreoidSpawnTime + 1.5f) && ballCount >= 20)
+
+        if (survivaTime >= (astreoidSpawnTime + spawnInterval))
         {
             AstreoidSpawn();
-            astreoidSpawnTime += 1.5f;
-            asteriodRespawnText.text = "Asteroid Respawn In 1.5 Sec";
+            astreoidSpawnTime = survivaTime;
+            asteriodRespawnText.text = "Asteroid Respawn In " + spawnInterval.ToString("0.0") + " Sec";
         }
 
         if(survivaTime <= 0)
@@ -89,9 +87,9 @@ public class GameManager : MonoBehaviour
             survivaTime = 0;
         }
 
-        if (SnakeHeadScript.Instance.endingBool)
+        if (SnakeHeadScript.Instance != null && SnakeHeadScript.Instance.endingBool)
         {
-            SnakeHeadScript.Instance.endingBool = !SnakeHeadScript.Instance.endingBool;
+            SnakeHeadScript.Instance.endingBool = false;
             if (survivaTime > bestSurviveTime)
             {
                 bestSurviveTime = survivaTime;
@@ -117,8 +115,12 @@ public class GameManager : MonoBehaviour
 
     public void AstreoidSpawn()
     {
-        Vector2 randomPosAstreoid = new Vector2(Random.Range(-14, 14), Random.Range(4,6));
-        GameObject astroid = Instantiate(astreoidPrefab[Random.Range(0,2)],randomPosAstreoid,Quaternion.identity);
+        Vector2 randomPosAstreoid = new Vector2(Random.Range(-14f, 14f), Random.Range(4f, 6f));
+        if (astreoidPrefab != null && astreoidPrefab.Count > 0)
+        {
+            int prefabIndex = Random.Range(0, astreoidPrefab.Count);
+            Instantiate(astreoidPrefab[prefabIndex], randomPosAstreoid, Quaternion.identity);
+        }
     }
 
     public void OnSoundSlider()
