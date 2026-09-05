@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
 
     private int lastDisplayedSec = -1;
     private int lastDisplayedBallCount = -1;
+    private int lastDisplayedSegCount = -1;
 
     // Start is called before the first frame update
     private void Awake()
@@ -99,11 +100,13 @@ public class GameManager : MonoBehaviour
                 timeText.text = "Time: " + currentSec.ToString("00") + "s | Score: " + currentScore;
         }
 
-        if (ballCount != lastDisplayedBallCount)
+        int segCount = SnakeManager.instance != null ? SnakeManager.instance.snakeBody.Count : 0;
+        if (ballCount != lastDisplayedBallCount || segCount != lastDisplayedSegCount)
         {
             lastDisplayedBallCount = ballCount;
+            lastDisplayedSegCount = segCount;
             if (energyBallCountText != null)
-                energyBallCountText.text = "Energy Ball : " + ballCount;
+                energyBallCountText.text = "Energy: " + ballCount + " | Body: " + segCount;
         }
 
         float spawnInterval = 3f;
@@ -120,7 +123,14 @@ public class GameManager : MonoBehaviour
         {
             AstreoidSpawn();
             astreoidSpawnTime = survivaTime;
-            asteriodRespawnText.text = "Asteroid Respawn In " + spawnInterval.ToString("0.0") + " Sec";
+        }
+
+        if (asteriodRespawnText != null)
+        {
+            float waveCountdown = Mathf.Max(0f, (astreoidSpawnTime + spawnInterval) - survivaTime);
+            bool canBoost = SnakeManager.instance != null && SnakeManager.instance.snakeBody.Count > 2;
+            string boostHint = canBoost ? "<color=#00FFAA>[SPACE] Boost Ready</color>" : "<color=#AAAAAA>[Need 2+ segments]</color>";
+            asteriodRespawnText.text = "Wave: " + waveCountdown.ToString("0.0") + "s  " + boostHint;
         }
 
         if(survivaTime <= 0)
@@ -128,12 +138,20 @@ public class GameManager : MonoBehaviour
             survivaTime = 0;
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
+        if (endingPanel != null && endingPanel.activeSelf)
         {
-            if (!endingPanel.activeSelf)
+            if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Return))
             {
-                PauseMenu();
+                Replay();
             }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                MainMenu();
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
+        {
+            PauseMenu();
         }
 
         if (SnakeHeadScript.Instance != null && SnakeHeadScript.Instance.endingBool)
