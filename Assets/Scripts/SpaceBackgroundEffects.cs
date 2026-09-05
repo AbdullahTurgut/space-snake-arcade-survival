@@ -92,7 +92,7 @@ public class SpaceBackgroundEffects : MonoBehaviour
         colorOverTime.color = grad;
 
         var psRenderer = starfieldObj.GetComponent<ParticleSystemRenderer>();
-        Shader unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default");
+        Shader unlitShader = Shader.Find("Universal Render Pipeline/Particles/Unlit") ?? Shader.Find("Particles/Standard Unlit") ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
         if (unlitShader != null)
         {
             psRenderer.material = new Material(unlitShader);
