@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -69,8 +69,9 @@ public class SpaceBackgroundEffects : MonoBehaviour
 
         var vel = starfieldSystem.velocityOverLifetime;
         vel.enabled = true;
-        vel.x = new ParticleSystem.MinMaxCurve(-0.15f, -0.05f);
-        vel.y = new ParticleSystem.MinMaxCurve(-0.25f, -0.10f);
+        vel.x = new ParticleSystem.MinMaxCurve(-0.10f);
+        vel.y = new ParticleSystem.MinMaxCurve(-0.18f);
+        vel.z = new ParticleSystem.MinMaxCurve(0f);
 
         var colorOverTime = starfieldSystem.colorOverLifetime;
         colorOverTime.enabled = true;
