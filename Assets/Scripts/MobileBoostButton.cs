@@ -51,8 +51,9 @@ public class MobileBoostButton : MonoBehaviour
 
     private void Update()
     {
-        // When game is paused (timeScale == 0) or ending, cleanly hide button from obscuring dialogs
-        if (Time.timeScale == 0f)
+        // When game is paused (timeScale == 0) or game over, cleanly hide button
+        bool isGameOver = GameManager.Instance != null && GameManager.Instance.isGameOver;
+        if (Time.timeScale == 0f || isGameOver)
         {
             if (canvasGroup != null)
             {
@@ -61,11 +62,6 @@ public class MobileBoostButton : MonoBehaviour
                 canvasGroup.blocksRaycasts = false;
             }
             return;
-        }
-
-        if (canvasGroup != null)
-        {
-            canvasGroup.blocksRaycasts = true;
         }
 
         bool isBoosting = SnakeManager.instance != null && SnakeManager.instance.IsInvulnerable;
@@ -78,12 +74,22 @@ public class MobileBoostButton : MonoBehaviour
             boostButton.interactable = canBoost;
         }
 
+        if (canvasGroup != null)
+        {
+            canvasGroup.interactable = canBoost;
+            canvasGroup.blocksRaycasts = canBoost;
+        }
+
         if (buttonImage != null)
         {
             if (isBoosting)
             {
                 buttonImage.color = boostingColor;
-                if (canvasGroup != null) canvasGroup.alpha = 1f;
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 1f;
+                    canvasGroup.blocksRaycasts = false;
+                }
                 if (buttonLabel != null) buttonLabel.text = "BOOSTING";
             }
             else if (canBoost)

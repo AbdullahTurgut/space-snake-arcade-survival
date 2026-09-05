@@ -19,7 +19,7 @@ public class SafeArea : MonoBehaviour
     }
 
     [Header("Constraint Settings")]
-    [SerializeField] private ConstraintMode mode = ConstraintMode.FullContainer;
+    [SerializeField] private ConstraintMode mode = ConstraintMode.PaddingInsets;
 
     public void SetMode(ConstraintMode newMode)
     {
@@ -36,14 +36,22 @@ public class SafeArea : MonoBehaviour
     private Vector2Int lastScreenSize = Vector2Int.zero;
     private ScreenOrientation lastOrientation = ScreenOrientation.AutoRotation;
 
+    private Vector2 initialAnchorMin;
+    private Vector2 initialAnchorMax;
+    private Vector2 initialSizeDelta;
+    private Vector2 initialPivot;
     private Vector2 initialAnchoredPosition;
     private bool initializedOffsets = false;
 
     private void Awake()
     {
         targetRect = GetComponent<RectTransform>();
-        if (targetRect != null)
+        if (targetRect != null && !initializedOffsets)
         {
+            initialAnchorMin = targetRect.anchorMin;
+            initialAnchorMax = targetRect.anchorMax;
+            initialSizeDelta = targetRect.sizeDelta;
+            initialPivot = targetRect.pivot;
             initialAnchoredPosition = targetRect.anchoredPosition;
             initializedOffsets = true;
         }
@@ -100,9 +108,19 @@ public class SafeArea : MonoBehaviour
         {
             if (!initializedOffsets)
             {
+                initialAnchorMin = targetRect.anchorMin;
+                initialAnchorMax = targetRect.anchorMax;
+                initialSizeDelta = targetRect.sizeDelta;
+                initialPivot = targetRect.pivot;
                 initialAnchoredPosition = targetRect.anchoredPosition;
                 initializedOffsets = true;
             }
+
+            // Guarantee widget anchors and size are strictly preserved
+            targetRect.anchorMin = initialAnchorMin;
+            targetRect.anchorMax = initialAnchorMax;
+            targetRect.sizeDelta = initialSizeDelta;
+            targetRect.pivot = initialPivot;
 
             Canvas rootCanvas = GetComponentInParent<Canvas>();
             float scale = (rootCanvas != null && rootCanvas.scaleFactor > 0f) ? rootCanvas.scaleFactor : 1f;
@@ -115,24 +133,24 @@ public class SafeArea : MonoBehaviour
             Vector2 newPos = initialAnchoredPosition;
 
             // Shift horizontal position based on widget's anchor affinity
-            if (targetRect.anchorMin.x >= 0.8f)
+            if (initialAnchorMin.x >= 0.8f)
             {
                 // Right-anchored: push left away from right cutout
                 newPos.x = initialAnchoredPosition.x - insetRight;
             }
-            else if (targetRect.anchorMax.x <= 0.2f)
+            else if (initialAnchorMax.x <= 0.2f)
             {
                 // Left-anchored: push right away from left cutout
                 newPos.x = initialAnchoredPosition.x + insetLeft;
             }
 
             // Shift vertical position based on widget's vertical anchor affinity
-            if (targetRect.anchorMin.y >= 0.8f)
+            if (initialAnchorMin.y >= 0.8f)
             {
                 // Top-anchored: push down away from top notch/status bar
                 newPos.y = initialAnchoredPosition.y - insetTop;
             }
-            else if (targetRect.anchorMax.y <= 0.2f)
+            else if (initialAnchorMax.y <= 0.2f)
             {
                 // Bottom-anchored: push up away from home indicator / navigation bar
                 newPos.y = initialAnchoredPosition.y + insetBottom;

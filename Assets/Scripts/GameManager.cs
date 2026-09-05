@@ -47,12 +47,20 @@ public class GameManager : MonoBehaviour
     private int lastDisplayedBallCount = -1;
     private int lastDisplayedSegCount = -1;
 
-    private bool isGameOver = false;
+    public bool isGameOver { get; private set; } = false;
+    private bool isGameStarted = false;
 
     private void Awake()
     {
         instance = this;
         Time.timeScale = 1f;
+        isGameOver = false;
+
+        // Ensure pause and game-over dialogs start explicitly inactive
+        if (Panel != null) Panel.SetActive(false);
+        if (endingPanel != null) endingPanel.SetActive(false);
+        if (canvas != null) canvas.sortingOrder = 0;
+        if (pauseBtn != null) pauseBtn.interactable = true;
 
         // Mobile platform setup: enforce landscape auto-rotation and 60fps refresh
         Screen.autorotateToPortrait = false;
@@ -72,12 +80,18 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        isGameOver = false;
+        if (Panel != null) Panel.SetActive(false);
+        if (endingPanel != null) endingPanel.SetActive(false);
+        if (canvas != null) canvas.sortingOrder = 0;
+
         if (ballCount != 0)
             ballCount = 0;
         if (bestTimeText != null)
             bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | High: " + highScore;
 
         SetupMobileUI();
+        isGameStarted = true;
     }
 
     public void AddScore(int points)
@@ -299,6 +313,7 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationPause(bool pauseStatus)
     {
+        if (!isGameStarted) return;
         if (pauseStatus)
         {
             // App losing focus or sent to background: pause safely
@@ -312,6 +327,8 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationFocus(bool hasFocus)
     {
+        if (!isGameStarted) return;
+#if !UNITY_EDITOR
         if (!hasFocus)
         {
             if (!isGameOver)
@@ -319,6 +336,7 @@ public class GameManager : MonoBehaviour
                 PauseGame();
             }
         }
+#endif
     }
 
     public void Replay()
@@ -340,36 +358,7 @@ public class GameManager : MonoBehaviour
 
     private void SetupMobileUI()
     {
-        // 1. Ensure SafeArea on Pause Button
-        if (pauseBtn != null && pauseBtn.GetComponent<SafeArea>() == null)
-        {
-            SafeArea sa = pauseBtn.gameObject.AddComponent<SafeArea>();
-            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
-        }
-
-        // 2. Ensure SafeArea on Top HUD Texts
-        if (timeText != null && timeText.GetComponent<SafeArea>() == null)
-        {
-            SafeArea sa = timeText.gameObject.AddComponent<SafeArea>();
-            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
-        }
-        if (bestTimeText != null && bestTimeText.GetComponent<SafeArea>() == null)
-        {
-            SafeArea sa = bestTimeText.gameObject.AddComponent<SafeArea>();
-            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
-        }
-        if (energyBallCountText != null && energyBallCountText.GetComponent<SafeArea>() == null)
-        {
-            SafeArea sa = energyBallCountText.gameObject.AddComponent<SafeArea>();
-            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
-        }
-        if (asteriodRespawnText != null && asteriodRespawnText.GetComponent<SafeArea>() == null)
-        {
-            SafeArea sa = asteriodRespawnText.gameObject.AddComponent<SafeArea>();
-            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
-        }
-
-        // 3. Ensure Mobile Boost Button is present in the lower-right interactive zone
+        // Ensure Mobile Boost Button is present in the lower-right interactive zone
         if (FindAnyObjectByType<MobileBoostButton>() == null && canvas != null)
         {
             CreateMobileBoostButton();
@@ -389,12 +378,8 @@ public class GameManager : MonoBehaviour
         rt.sizeDelta = new Vector2(140f, 70f);
 
         Image bgImage = boostObj.AddComponent<Image>();
-        if (pauseBtn != null && pauseBtn.image != null)
-        {
-            bgImage.sprite = pauseBtn.image.sprite;
-            bgImage.type = Image.Type.Sliced;
-        }
-        bgImage.color = new Color(0f, 1f, 0.75f, 0.85f);
+        bgImage.color = new Color(0f, 0.85f, 0.7f, 0.85f);
+        bgImage.raycastTarget = true;
 
         Button btn = boostObj.AddComponent<Button>();
         btn.targetGraphic = bgImage;
@@ -415,6 +400,7 @@ public class GameManager : MonoBehaviour
 
         Text labelText = labelObj.AddComponent<Text>();
         labelText.text = "BOOST";
+        labelText.raycastTarget = false; // Never block clicks to button
         if (timeText != null && timeText.font != null)
         {
             labelText.font = timeText.font;
@@ -422,9 +408,6 @@ public class GameManager : MonoBehaviour
         labelText.fontSize = 22;
         labelText.alignment = TextAnchor.MiddleCenter;
         labelText.color = new Color(0.05f, 0.1f, 0.15f, 1f);
-
-        SafeArea sa = boostObj.AddComponent<SafeArea>();
-        sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
 
         boostObj.AddComponent<MobileBoostButton>();
     }
