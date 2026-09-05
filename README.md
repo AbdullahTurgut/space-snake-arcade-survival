@@ -1,4 +1,4 @@
-﻿# 2D Space Snake Game: Arcade Survival Edition
+# 2D Space Snake Game: Arcade Survival Edition
 
 A modern, high-intensity 2D arcade survival title built in **Unity 6.3 LTS (Universal 2D)**.
 
@@ -22,11 +22,11 @@ The game features **Unified Dual Input Handling**, seamlessly supporting both de
 
 | Action | Desktop / Keyboard | Mobile / Touch |
 | :--- | :--- | :--- |
-| **Steer Left / Right** | `A` / `D` or `Left Arrow` / `Right Arrow` | Virtual Joystick (Left drag) |
-| **Tactical Boost** | `Spacebar` or `Left Shift` *(Requires > 2 segments)* | Hotkey / Boost Input |
-| **Pause / Resume** | `Escape` or `P` | Pause Button (Top Right) |
+| **Steer Left / Right** | `A` / `D` or `Left Arrow` / `Right Arrow` | Virtual Joystick (Left 65% drag zone) |
+| **Tactical Boost** | `Spacebar` or `Left Shift` *(Requires > 2 segments)* | On-Screen Boost Button (Lower Right) |
+| **Pause / Resume** | `Escape` or `P` | Pause Button (Top Right) / Android Back |
 | **Quick Restart** | `R` or `Return` (Game Over screen) | Replay Button |
-| **Main Menu / Start** | `Return` or `Spacebar` | Start Button |
+| **Main Menu / Start** | `Return` or `Spacebar` | Start Button / Android Back (Game Over) |
 | **Toggle Music** | `M` (Main Menu) | Audio Toggle Button |
 
 ---
@@ -70,7 +70,19 @@ This repository underwent a full architectural refactoring to transform legacy b
 ### UI & Resolution Independence
 - **CanvasScaler Configuration**: All canvas elements are scaled using `Scale With Screen Size` (1920x1080 Reference Resolution, Match 0.5).
 - **Responsive Bounds**: Standardized UI anchors and pivots across HUD and Game Over modals.
-- **Touch Zone Isolation**: Restricted virtual joystick drag detection to the lower 80% screen area, preventing accidental occlusion of the pause button on sub-1080p and mobile aspect ratios.
+- **Touch Zone Isolation**: Restricted virtual joystick drag detection to the left 65% screen area (lower 80% height), ensuring touch zones do not conflict with the top HUD or lower-right Boost button.
+
+### 📱 Android Landscape & Mobile Architecture
+- **Orientation Lock**: Strict Landscape auto-rotation (Landscape Left & Landscape Right) with portrait orientations completely disabled.
+- **Mobile Aspect Ratios**: Fully responsive across modern mobile ratios (16:10, 16:9, 18:9, 19.5:9, 20:9, 21:9) with dynamic camera framing (`ArenaCameraFramer`) and full-bleed overscan background.
+- **Notch & Safe Area Support**: Reusable `SafeArea` component dynamically insets HUD text, Pause button, and Boost button from display cutouts, camera islands, rounded corners, and Android gesture bars.
+- **Dual-Thumb Touch Controls**:
+  - Left Zone (0% - 65% width): High-precision virtual touch joystick with single-finger tracking, multi-touch isolation, and off-screen watchdog safety.
+  - Lower-Right Zone: On-screen Tactical Boost button with real-time ready/unavailable/boosting visual telegraphing, identical in mechanics to desktop spacebar.
+- **Lifecycle & Pause Handling**: `OnApplicationPause` and `OnApplicationFocus` safely pause gameplay and background audio on phone calls or app switching, preventing accidental deaths.
+- **Android Back Button**: Mapped to Pause menu during active gameplay, resumes when paused, returns to Main Menu on game over, and exits app from Main Menu.
+- **Target Performance**: 60fps target framerate (`Application.targetFrameRate = 60`), 64-bit ARM64 architecture, and IL2CPP scripting backend.
+- **Validation Status**: *Android build prepared; physical-device validation recommended.*
 
 ---
 
@@ -84,11 +96,25 @@ This repository underwent a full architectural refactoring to transform legacy b
 1. `Assets/Scenes/MainMenu.unity` (Build Index 0)
 2. `Assets/Scenes/PlayScene.unity` (Build Index 1)
 
-### Building Standalone Executable
+### Building Standalone Desktop (Windows / macOS / Linux)
 1. Open Unity and select **File > Build Settings...**
 2. Ensure `MainMenu` is at index 0 and `PlayScene` is at index 1.
-3. Select your target platform (**Windows / macOS / Linux / WebGL / Android**).
+3. Select your target platform (**Windows / macOS / Linux**).
 4. Click **Build** and choose your destination directory.
+
+### Building Android APK
+1. In Unity Hub, verify that the following modules are installed for Unity 6.3 LTS (`6000.3.23f1`):
+   - **Android Build Support**
+   - **Android SDK & NDK Tools**
+   - **OpenJDK**
+2. Open Unity and select **File > Build Settings...**
+3. Select **Android** and click **Switch Platform**.
+4. Verify Player Settings:
+   - Package Name: `com.abdullahturgut.spacesnakearcadesurvival`
+   - Minimum API: `API Level 26 (Android 8.0)`
+   - Scripting Backend: `IL2CPP`
+   - Target Architectures: `ARM64`
+5. Click **Build** (or use the Editor menu **Build > Build Android APK (Development)**).
 
 ---
 
@@ -96,23 +122,29 @@ This repository underwent a full architectural refactoring to transform legacy b
 
 ```
 Assets/
-├── Materials/         # 2D Sprite & UI materials
-├── Prefabs/           # Snake segments, asteroids, energy balls
-├── Resources/         # Audio clips (bomb, pick, game over, BGM)
+├── Editor/
+│   └── AndroidBuildHelper.cs # Editor build automation and Android module validator
+├── Materials/                # 2D Sprite & UI materials
+├── Prefabs/                  # Snake segments, asteroids, energy balls
+├── Resources/                # Audio clips (bomb, pick, game over, BGM)
 ├── Scenes/
-│   ├── MainMenu.unity # Title screen with start & music controls
-│   └── PlayScene.unity# Main arcade gameplay arena
+│   ├── MainMenu.unity        # Title screen with start & music controls
+│   └── PlayScene.unity       # Main arcade gameplay arena
 └── Scripts/
-    ├── CameraShake.cs     # Procedural unscaled camera trauma
-    ├── DestroyAsteroid.cs # Hazard trajectories, comets, collisions & near-miss
-    ├── EnergyBall.cs      # Collectible positioning, growth & score rewards
-    ├── GameManager.cs     # Game loop, wave timers, scoring & high scores
-    ├── MarkerParts.cs     # Zero-GC value-type struct position trail buffer
-    ├── MenuController.cs  # Title scene navigation & desktop shortcuts
-    ├── MovementJoystick.cs# Resolution-scaled touch joystick
-    ├── SnakeHeadScript.cs # Head collision dispatch & safe singleton
-    ├── SnakeManager.cs    # Kinematic movement, boost mechanic & body list
-    └── SoundManager.cs    # 2D SFX dispatcher with pitch randomization
+    ├── ArenaCameraFramer.cs  # Dynamic orthographic camera scaling (16:10 to 21:9)
+    ├── CameraShake.cs        # Procedural unscaled camera trauma
+    ├── DestroyAsteroid.cs    # Hazard trajectories, comets, collisions & near-miss
+    ├── EnergyBall.cs         # Collectible positioning, growth & score rewards
+    ├── GameManager.cs        # Game loop, wave timers, scoring & high scores
+    ├── MarkerParts.cs        # Zero-GC value-type struct position trail buffer
+    ├── MenuController.cs     # Title scene navigation & desktop shortcuts
+    ├── MobileBoostButton.cs  # On-screen Tactical Boost button with ready telegraphing
+    ├── MovementJoystick.cs   # Multi-touch isolated resolution-scaled joystick
+    ├── SafeArea.cs           # Screen.safeArea notch, cutout & gesture bar insets
+    ├── SnakeHeadScript.cs    # Head collision dispatch & safe singleton
+    ├── SnakeManager.cs       # Kinematic movement, boost mechanic & body list
+    ├── SoundManager.cs       # 2D SFX dispatcher with pitch randomization
+    └── SpaceBackgroundEffects.cs # Ambient cosmic breathing & starfield dust
 ```
 
 ---
