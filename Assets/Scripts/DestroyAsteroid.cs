@@ -47,17 +47,22 @@ public class DestroyAsteroid : MonoBehaviour
     {
         if (collision.CompareTag("BodyPart"))
         {
-            Destroy(gameObject);
-            Destroy(collision.gameObject);
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayBombSound();
+            if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.2f, 0.25f);
             if (GameManager.Instance != null)
             {
+                GameManager.Instance.TriggerHitPause(0.04f);
                 GameManager.Instance.survivaTime = Mathf.Max(0f, GameManager.Instance.survivaTime - 3f);
                 GameManager.Instance.astreoidSpawnTime = Mathf.Max(0f, GameManager.Instance.astreoidSpawnTime - 3f);
             }
+            Destroy(gameObject);
+            Destroy(collision.gameObject);
         }
         else if (collision.CompareTag("Player"))
         {
             // Head collision with asteroid triggers Game Over
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayBombSound(0.8f, 0.9f);
+            if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.4f, 0.45f);
             Destroy(gameObject);
             if (SnakeHeadScript.Instance != null)
             {

@@ -17,6 +17,8 @@ public class SnakeHeadScript : MonoBehaviour
     {
         if (col.CompareTag("Wall"))
         {
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayBombSound(0.8f, 0.9f);
+            if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.35f, 0.4f);
             endingBool = true;
         }
     }

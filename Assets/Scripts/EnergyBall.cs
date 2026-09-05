@@ -32,7 +32,14 @@ public class EnergyBall : MonoBehaviour
     {
         if (col.CompareTag("Player"))
         {
-            if (pickSound != null) pickSound.Play();
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayPickSound();
+            }
+            else if (pickSound != null)
+            {
+                pickSound.Play();
+            }
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.ballCount += 1;

@@ -8051,6 +8051,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   volumeSlider: {fileID: 1855192644}
+  bombClip: {fileID: 8300000, guid: e42f9a9f2e086174197b2f3e352cebaa, type: 3}
+  pickClip: {fileID: 8300000, guid: 20ddbdc2467f0944b991a58bd138eb8c, type: 3}
 --- !u!1 &1857709043
 GameObject:
   m_ObjectHideFlags: 0

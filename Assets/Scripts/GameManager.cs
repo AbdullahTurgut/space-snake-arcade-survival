@@ -125,8 +125,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private bool isGameOver = false;
+
+    public void TriggerHitPause(float duration = 0.04f)
+    {
+        if (!isGameOver && Panel != null && !Panel.activeSelf)
+        {
+            StartCoroutine(HitPauseRoutine(duration));
+        }
+    }
+
+    private System.Collections.IEnumerator HitPauseRoutine(float duration)
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(duration);
+        if (!isGameOver && Panel != null && !Panel.activeSelf)
+        {
+            Time.timeScale = 1f;
+        }
+    }
+
     public void EndingGame()
     {
+        isGameOver = true;
         canvas.sortingOrder = 1;
         pauseBtn.interactable = false;
         endingPanel.SetActive(true);
