@@ -87,6 +87,14 @@ public class GameManager : MonoBehaviour
             survivaTime = 0;
         }
 
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
+        {
+            if (!endingPanel.activeSelf)
+            {
+                PauseMenu();
+            }
+        }
+
         if (SnakeHeadScript.Instance != null && SnakeHeadScript.Instance.endingBool)
         {
             SnakeHeadScript.Instance.endingBool = false;

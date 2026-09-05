@@ -19,15 +19,17 @@ public class MovementJoystick : MonoBehaviour
         instance = this;
     }
 
-    // Start is called before the first frame update
+    private Canvas parentCanvas;
+
     void Start()
     {
+        parentCanvas = GetComponentInParent<Canvas>();
         joystickOriginalPosition = joystickBG.transform.position;
         joystickRadius = joystickBG.GetComponent<RectTransform>().sizeDelta.y / 3.5f;
     }
     public void PointerDown()
     {
-        joystick.transform.position =Input.mousePosition;
+        joystick.transform.position = Input.mousePosition;
         joystickBG.transform.position = Input.mousePosition;
         joystickTouchPosition = Input.mousePosition;
     }
@@ -39,15 +41,16 @@ public class MovementJoystick : MonoBehaviour
         joystickVector = (dragPos - joystickTouchPosition).normalized;
 
         float joystickDistance = Vector2.Distance(dragPos, joystickTouchPosition);
+        float scale = parentCanvas != null ? parentCanvas.scaleFactor : 1f;
+        float effectiveRadius = joystickRadius * scale;
 
-        if( joystickDistance < joystickRadius )
+        if (joystickDistance < effectiveRadius)
         {
             joystick.transform.position = joystickTouchPosition + joystickVector * joystickDistance;
         }
-
         else
         {
-            joystick.transform.position = joystickTouchPosition + joystickVector * joystickRadius;
+            joystick.transform.position = joystickTouchPosition + joystickVector * effectiveRadius;
         }
     }
 
