@@ -39,8 +39,6 @@ public class GameManager : MonoBehaviour
     [HideInInspector]
     public int ballCount = 0;
 
-    
-
     [HideInInspector] public int currentScore = 0;
     [HideInInspector] public int highScore = 0;
     private int nearMissCount = 0;
@@ -49,23 +47,37 @@ public class GameManager : MonoBehaviour
     private int lastDisplayedBallCount = -1;
     private int lastDisplayedSegCount = -1;
 
-    // Start is called before the first frame update
+    private bool isGameOver = false;
+
     private void Awake()
     {
         instance = this;
         Time.timeScale = 1f;
-        if(PlayerPrefs.HasKey("bestSurviveTime"))
+
+        // Mobile platform setup: enforce landscape auto-rotation and 60fps refresh
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+        Screen.orientation = ScreenOrientation.AutoRotation;
+        Application.targetFrameRate = 60;
+
+        if (PlayerPrefs.HasKey("bestSurviveTime"))
             bestSurviveTime = PlayerPrefs.GetFloat("bestSurviveTime");
         else
             PlayerPrefs.SetFloat("bestSurviveTime", bestSurviveTime);
 
         highScore = PlayerPrefs.GetInt("highScore", 0);
     }
+
     void Start()
     {
         if (ballCount != 0)
             ballCount = 0;
-        bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | High: " + highScore;
+        if (bestTimeText != null)
+            bestTimeText.text = "Best Time : " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | High: " + highScore;
+
+        SetupMobileUI();
     }
 
     public void AddScore(int points)
@@ -86,7 +98,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
         survivaTime += Time.deltaTime;
@@ -129,15 +140,16 @@ public class GameManager : MonoBehaviour
         {
             float waveCountdown = Mathf.Max(0f, (astreoidSpawnTime + spawnInterval) - survivaTime);
             bool canBoost = SnakeManager.instance != null && SnakeManager.instance.snakeBody.Count > 2;
-            string boostHint = canBoost ? "<color=#00FFAA>[SPACE] Boost Ready</color>" : "<color=#AAAAAA>[Need 2+ segments]</color>";
+            string boostHint = canBoost ? "<color=#00FFAA>[SPACE / BOOST] Ready</color>" : "<color=#AAAAAA>[Need 2+ segments]</color>";
             asteriodRespawnText.text = "Wave: " + waveCountdown.ToString("0.0") + "s  " + boostHint;
         }
 
-        if(survivaTime <= 0)
+        if (survivaTime <= 0)
         {
             survivaTime = 0;
         }
 
+        // Handle Android Back (KeyCode.Escape) and Keyboard shortcuts
         if (endingPanel != null && endingPanel.activeSelf)
         {
             if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Return))
@@ -149,9 +161,18 @@ public class GameManager : MonoBehaviour
                 MainMenu();
             }
         }
+        else if (Panel != null && Panel.activeSelf)
+        {
+            // Paused state: Back / Escape / P resumes gameplay
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
+            {
+                ResumeGame();
+            }
+        }
         else if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
         {
-            PauseMenu();
+            // Active gameplay: Back / Escape / P opens Pause menu
+            PauseGame();
         }
 
         if (SnakeHeadScript.Instance != null && SnakeHeadScript.Instance.endingBool)
@@ -168,13 +189,11 @@ public class GameManager : MonoBehaviour
                 PlayerPrefs.SetInt("highScore", highScore);
             }
             PlayerPrefs.Save();
-            joystickPanel.SetActive(false);
-            playSceneFbx.Stop();
+            if (joystickPanel != null) joystickPanel.SetActive(false);
+            if (playSceneFbx != null) playSceneFbx.Stop();
             EndingGame();
         }
     }
-
-    private bool isGameOver = false;
 
     public void TriggerHitPause(float duration = 0.04f)
     {
@@ -197,15 +216,20 @@ public class GameManager : MonoBehaviour
     public void EndingGame()
     {
         isGameOver = true;
-        canvas.sortingOrder = 1;
-        pauseBtn.interactable = false;
-        endingPanel.SetActive(true);
-        endingPanel.GetComponent<AudioSource>().Play();
-        Time.timeScale = 0;
-        newSurviveTimeText.text = "SURVIVED: " + survivaTime.ToString("00") + "s | SCORE: " + currentScore;
-        BestSurviveTimeText.text = "BEST: " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | HIGH: " + highScore;
+        if (canvas != null) canvas.sortingOrder = 1;
+        if (pauseBtn != null) pauseBtn.interactable = false;
+        if (endingPanel != null)
+        {
+            endingPanel.SetActive(true);
+            AudioSource endAudio = endingPanel.GetComponent<AudioSource>();
+            if (endAudio != null) endAudio.Play();
+        }
+        Time.timeScale = 0f;
+        if (newSurviveTimeText != null)
+            newSurviveTimeText.text = "SURVIVED: " + survivaTime.ToString("00") + "s | SCORE: " + currentScore;
+        if (BestSurviveTimeText != null)
+            BestSurviveTimeText.text = "BEST: " + PlayerPrefs.GetFloat("bestSurviveTime").ToString("00") + "s | HIGH: " + highScore;
     }
-
 
     public void AstreoidSpawn()
     {
@@ -224,37 +248,184 @@ public class GameManager : MonoBehaviour
 
     public void OnSoundSlider()
     {
-        soundSlider.SetActive(!soundSlider.activeSelf);
+        if (soundSlider != null)
+            soundSlider.SetActive(!soundSlider.activeSelf);
     }
+
+    public void PauseGame()
+    {
+        if (isGameOver) return;
+        if (Panel != null && !Panel.activeSelf)
+        {
+            Panel.SetActive(true);
+            if (joystickPanel != null) joystickPanel.SetActive(false);
+            if (canvas != null) canvas.sortingOrder = 1;
+            Time.timeScale = 0f;
+            if (playSceneFbx != null && playSceneFbx.isPlaying)
+            {
+                playSceneFbx.Pause();
+            }
+        }
+    }
+
+    public void ResumeGame()
+    {
+        if (isGameOver) return;
+        if (Panel != null && Panel.activeSelf)
+        {
+            Panel.SetActive(false);
+            if (joystickPanel != null) joystickPanel.SetActive(true);
+            if (canvas != null) canvas.sortingOrder = 0;
+            Time.timeScale = 1f;
+            if (playSceneFbx != null)
+            {
+                playSceneFbx.UnPause();
+            }
+        }
+    }
+
     public void PauseMenu()
     {
-        
-        Panel.SetActive(!Panel.activeSelf);
-        joystickPanel.SetActive(!Panel.activeSelf);
-        if (!Panel.activeSelf)
+        if (isGameOver) return;
+        if (Panel != null && Panel.activeSelf)
         {
-            canvas.sortingOrder = 0;
-            Time.timeScale = 1;
+            ResumeGame();
         }
         else
         {
-            canvas.sortingOrder = 1;
-            Time.timeScale = 0;
+            PauseGame();
         }
     }
-   
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            // App losing focus or sent to background: pause safely
+            if (!isGameOver)
+            {
+                PauseGame();
+            }
+        }
+        // When returning (pauseStatus == false), preserve the pause menu to avoid instant death
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            if (!isGameOver)
+            {
+                PauseGame();
+            }
+        }
+    }
+
     public void Replay()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
     public void MainMenu()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(0);
     }
+
     public void Quit()
     {
         Application.Quit();
+    }
+
+    private void SetupMobileUI()
+    {
+        // 1. Ensure SafeArea on Pause Button
+        if (pauseBtn != null && pauseBtn.GetComponent<SafeArea>() == null)
+        {
+            SafeArea sa = pauseBtn.gameObject.AddComponent<SafeArea>();
+            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+        }
+
+        // 2. Ensure SafeArea on Top HUD Texts
+        if (timeText != null && timeText.GetComponent<SafeArea>() == null)
+        {
+            SafeArea sa = timeText.gameObject.AddComponent<SafeArea>();
+            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+        }
+        if (bestTimeText != null && bestTimeText.GetComponent<SafeArea>() == null)
+        {
+            SafeArea sa = bestTimeText.gameObject.AddComponent<SafeArea>();
+            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+        }
+        if (energyBallCountText != null && energyBallCountText.GetComponent<SafeArea>() == null)
+        {
+            SafeArea sa = energyBallCountText.gameObject.AddComponent<SafeArea>();
+            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+        }
+        if (asteriodRespawnText != null && asteriodRespawnText.GetComponent<SafeArea>() == null)
+        {
+            SafeArea sa = asteriodRespawnText.gameObject.AddComponent<SafeArea>();
+            sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+        }
+
+        // 3. Ensure Mobile Boost Button is present in the lower-right interactive zone
+        if (FindAnyObjectByType<MobileBoostButton>() == null && canvas != null)
+        {
+            CreateMobileBoostButton();
+        }
+    }
+
+    private void CreateMobileBoostButton()
+    {
+        GameObject boostObj = new GameObject("MobileBoostButton");
+        boostObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform rt = boostObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(1f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(1f, 0f);
+        rt.anchoredPosition = new Vector2(-45f, 40f);
+        rt.sizeDelta = new Vector2(140f, 70f);
+
+        Image bgImage = boostObj.AddComponent<Image>();
+        if (pauseBtn != null && pauseBtn.image != null)
+        {
+            bgImage.sprite = pauseBtn.image.sprite;
+            bgImage.type = Image.Type.Sliced;
+        }
+        bgImage.color = new Color(0f, 1f, 0.75f, 0.85f);
+
+        Button btn = boostObj.AddComponent<Button>();
+        btn.targetGraphic = bgImage;
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = new Color(1f, 1f, 1f, 1f);
+        cb.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        cb.disabledColor = new Color(0.35f, 0.45f, 0.55f, 0.4f);
+        btn.colors = cb;
+
+        GameObject labelObj = new GameObject("Label");
+        labelObj.transform.SetParent(boostObj.transform, false);
+        RectTransform labelRt = labelObj.AddComponent<RectTransform>();
+        labelRt.anchorMin = Vector2.zero;
+        labelRt.anchorMax = Vector2.one;
+        labelRt.offsetMin = Vector2.zero;
+        labelRt.offsetMax = Vector2.zero;
+
+        Text labelText = labelObj.AddComponent<Text>();
+        labelText.text = "BOOST";
+        if (timeText != null && timeText.font != null)
+        {
+            labelText.font = timeText.font;
+        }
+        labelText.fontSize = 22;
+        labelText.alignment = TextAnchor.MiddleCenter;
+        labelText.color = new Color(0.05f, 0.1f, 0.15f, 1f);
+
+        SafeArea sa = boostObj.AddComponent<SafeArea>();
+        sa.SetMode(SafeArea.ConstraintMode.PaddingInsets);
+
+        boostObj.AddComponent<MobileBoostButton>();
     }
 }
