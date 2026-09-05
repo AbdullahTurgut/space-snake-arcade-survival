@@ -29,3 +29,9 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Unity Android generated
+.utmp/
+
+# User IDE
+.vsconfig

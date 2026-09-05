@@ -92,6 +92,11 @@ public class SpaceBackgroundEffects : MonoBehaviour
         colorOverTime.color = grad;
 
         var psRenderer = starfieldObj.GetComponent<ParticleSystemRenderer>();
+        Shader unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default");
+        if (unlitShader != null)
+        {
+            psRenderer.material = new Material(unlitShader);
+        }
         psRenderer.sortingLayerID = 0;
         psRenderer.sortingOrder = -1; // Render behind snake and asteroids (order 0)
     }
