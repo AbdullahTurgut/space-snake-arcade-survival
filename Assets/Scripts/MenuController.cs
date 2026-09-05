@@ -45,6 +45,7 @@ public class MenuController : MonoBehaviour
 
     public void goPlayScene()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("PlayScene");
     }
 }

@@ -44,6 +44,7 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     private void Awake()
     {
+        Time.timeScale = 1f;
         if(PlayerPrefs.HasKey("bestSurviveTime"))
             bestSurviveTime = PlayerPrefs.GetFloat("bestSurviveTime");
         else
@@ -143,10 +144,12 @@ public class GameManager : MonoBehaviour
    
     public void Replay()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     public void MainMenu()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(0);
     }
     public void Quit()
